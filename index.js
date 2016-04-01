@@ -220,12 +220,17 @@ io.on('connection', function(socket) {
 
     lodash.forEach(sessions[users[userId].sessionId].userIds, function(id) {
       console.log('Sending message to user ' + id + '.');
-      users[id].socket.emit('sendMessage', {
-        body: message.body,
-        isSystemMessage: isSystemMessage,
-        timestamp: message.timestamp.getTime(),
-        userId: message.userId
-      });
+      if (users.hasOwnProperty(id)) {
+        users[id].socket.emit('sendMessage', {
+          body: message.body,
+          isSystemMessage: isSystemMessage,
+          timestamp: message.timestamp.getTime(),
+          userId: message.userId
+        });
+      } else {
+        // no idea how this can happen...
+        console.error(new Error('Error: tried to send message to'));
+      }
     });
   };
 

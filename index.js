@@ -229,7 +229,7 @@ io.on('connection', function(socket) {
         });
       } else {
         // no idea how this can happen...
-        console.error(new Error('Error: tried to send message to'));
+        console.error(new Error('Error: tried to send message to nonexistent user'));
       }
     });
   };

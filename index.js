@@ -176,6 +176,9 @@ function padIntegerWithZeros(x, minWidth) {
 
 io.on('connection', function(socket) {
   var userId = makeId();
+  while (users.hasOwnProperty(userId)) {
+    userId = makeId();
+  }
   users[userId] = {
     id: userId,
     sessionId: null,
@@ -220,22 +223,17 @@ io.on('connection', function(socket) {
 
     lodash.forEach(sessions[users[userId].sessionId].userIds, function(id) {
       console.log('Sending message to user ' + id + '.');
-      if (users.hasOwnProperty(id)) {
-        users[id].socket.emit('sendMessage', {
-          body: message.body,
-          isSystemMessage: isSystemMessage,
-          timestamp: message.timestamp.getTime(),
-          userId: message.userId
-        });
-      } else {
-        // no idea how this can happen...
-        console.error(new Error('Error: tried to send message to nonexistent user'));
-      }
+      users[id].socket.emit('sendMessage', {
+        body: message.body,
+        isSystemMessage: isSystemMessage,
+        timestamp: message.timestamp.getTime(),
+        userId: message.userId
+      });
     });
   };
 
   // precondition: user userId is in a session
-  var leaveSession = function() {
+  var leaveSession = function(broadcast) {
     sendMessage('left', true);
 
     var sessionId = users[userId].sessionId;
@@ -246,7 +244,9 @@ io.on('connection', function(socket) {
       delete sessions[sessionId];
       console.log('Session ' + sessionId + ' was deleted because there were no more users in it.');
     } else {
-      broadcastPresence(sessionId, null);
+      if (broadcast) {
+        broadcastPresence(sessionId, null);
+      }
     }
   };
 
@@ -306,10 +306,7 @@ io.on('connection', function(socket) {
     }
 
     if (users[userId].sessionId !== null) {
-      lodash.pull(sessions[users[userId].sessionId].userIds, userId);
-      if (sessions[users[userId].sessionId].userIds.length === 0) {
-        delete sessions[users[userId].sessionId];
-      }
+      leaveSession(false);
     }
     if (userId !== data.userId) {
       users[data.userId] = users[userId];
@@ -368,10 +365,13 @@ io.on('connection', function(socket) {
       return;
     }
 
-    users[userId].sessionId = makeId();
+    var sessionId = makeId();
+    while (sessions.hasOwnProperty(sessionId)) {
+      sessionId = makeId();
+    }
     var now = new Date();
     var session = {
-      id: users[userId].sessionId,
+      id: sessionId,
       lastKnownTime: 0,
       lastKnownTimeUpdatedAt: now,
       messages: [],
@@ -380,6 +380,7 @@ io.on('connection', function(socket) {
       userIds: [userId],
       videoId: data.videoId
     };
+    users[userId].sessionId = sessionId;
     sessions[session.id] = session;
 
     fn({
@@ -455,7 +456,7 @@ io.on('connection', function(socket) {
     }
 
     var sessionId = users[userId].sessionId;
-    leaveSession();
+    leaveSession(true);
 
     fn(null);
     console.log('User ' + userId + ' left session ' + sessionId + '.');
@@ -638,14 +639,10 @@ io.on('connection', function(socket) {
     }
 
     if (users[userId].sessionId !== null) {
-      leaveSession();
+      leaveSession(true);
     }
     delete users[userId];
     console.log('User ' + userId + ' disconnected.');
-  });
-
-  socket.on('error', function(e) {
-    console.error(e);
   });
 });
 

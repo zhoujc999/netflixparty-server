@@ -4,7 +4,7 @@
   "description": "A tool for synchronized Netflix consumption.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "./node_modules/.bin/forever index.js"
   },
   "keywords": [
     "netflix"
@@ -13,6 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "express": "^4.13.3",
+    "forever": "^0.15.1",
     "lodash": "^3.10.1",
     "morgan": "^1.6.1",
     "socket.io": "^1.4.3"

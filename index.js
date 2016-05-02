@@ -339,6 +339,8 @@ io.on('connection', function(socket) {
       console.log('User ' + userId + ' rebooted session ' + users[userId].sessionId + ' with video ' + JSON.stringify(data.videoId) + ', time ' + JSON.stringify(data.lastKnownTime) + ', and state ' + data.state + ' for epoch ' + JSON.stringify(data.lastKnownTimeUpdatedAt) + '.');
     }
 
+    broadcastPresence(data.sessionId, null);
+
     fn({
       lastKnownTime: sessions[data.sessionId].lastKnownTime,
       lastKnownTimeUpdatedAt: sessions[data.sessionId].lastKnownTimeUpdatedAt.getTime(),
